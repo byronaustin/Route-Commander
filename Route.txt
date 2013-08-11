@@ -1,0 +1,2297 @@
+var REGISTRATION;
+var HELP_FILE = "\\Storage Card\\BU\\Route\\Route_Help.htm";
+var DEBUG = false;//true;
+var Register = false;
+var Demo = false;//true;
+var DB_FILE
+var BU_FILE
+var DB_NUMBER_PATH = "\\Storage Card\\Route\\Route_Sounds\\Number_Sounds\\";
+var DB_SPECIAL_PATH = "\\Storage Card\\Route\\Route_Sounds\\Special_Sounds\\";
+var DB_STREET_PATH = "\\Storage Card\\Route\\Route_Sounds\\Street_Sounds\\";
+var DB_DIRECT_PATH = "\\Storage Card\\Route\\Route_Sounds\\Direction_Sounds\\";
+var DB_MILE_FILE = "\\Storage Card\\BU\\Route\\Route_Miles.txt";
+var BU_MILE_FILE = "\\Storage Card\\Route\\Route_Miles.txt";
+var BU_RECORD1 = "\\Storage Card\\Route\\Route_2C18.txt";
+var DB_RECORD1 = "\\Storage Card\\BU\\Route\\Route_2C18.txt";
+var BU_RECORD5 = "\\Storage Card\\Route\\Route_2C22.txt";
+var DB_RECORD5 = "\\Storage Card\\BU\\Route\\Route_2C22.txt";
+var BU_RECORD6 = "\\Storage Card\\Route\\Route_TOTAL.txt";
+var DB_RECORD6 = "\\Storage Card\\BU\\Route\\Route_TOTAL.txt";
+var BU_RECORD2 = "\\Storage Card\\Route\\Route_LOG.txt";
+var DB_RECORD2 = "\\Storage Card\\BU\\Route\\Route_LOG.txt";
+var DB_DEBUG = "\\Storage Card\\BU\\Route\\Debug.txt";
+var DB_RACK = "\\Storage Card\\BU\\Route\\Rack.txt";
+var IDM_FILE =1000;
+var IDM_MAINT= 1001;
+var IDM_EXIT =1002;
+var IDM_SAVE =1003;
+var IDM_EDIT =1010;
+var IDM_RENUMBER = 1004;
+var IDM_DELAY = 1013;
+var IDM_VOICE = 1014;
+var IDM_PAGE = 1015;
+var IDM_TIME = 1016;
+var IDM_ACTIVE= 1011;
+var IDM_HOUSES= 1012;
+var IDM_DIRECTIONS= 1013;
+var IDM_PACE = 1017;
+var IDM_SLOW = 1018;
+var IDM_MED = 1019;
+var IDM_FAST = 1020;
+var IDM_ORDER= 1130;
+var IDM_TEMPLATE = 2000
+var IDM_R2C22 = 2010
+var IDM_R2C18 = 2020
+var IDM_HELP = 3000
+var IDM_ABOUT = 3010
+var IDM_Route_Help = 3020
+var IDM_Register = 3030;
+var VERISON = "RouteVoiceVpac7.1.2"
+var COPYRIGHT = "2006, 2007, 2008, 2009, 2010 Byron Austin"
+var EMAIL = "byronaustin007@gmail.com"
+var g_rs; //Global record index
+var Sindex;
+var Total;
+var count = 0
+var C18,C20,C22;
+var D3
+var month
+var year
+var day
+var cycle
+var ORDER=false;
+var CurrentStreet="";
+var Pause = false;
+//var SND_FILENAME   = 131072; // 0x00020000 name is a file name
+var SND_SYNC       = 0;      // 0x00000000 play synchronously (default)
+var SND_ASYNC      = 1;      // 0x00000001 play asynchronously
+var SND_NODEFAULT  = 2;      // 0x00000002 silence not default, if sound not found
+var SND_LOOP       = 8;      // 0x00000008 loop the sound until next sndPlaySound
+var sound          = 0; // default
+var Auto = false;
+var SoundON = false;
+var now = Date();
+var R2C22 = 0;
+var R2C18 = 2;
+var template = R2C18
+var DelayType = 0
+var LoopCount = 0
+var total;
+var MaxRecords = 10
+var RunTime = 0
+var VPFlag = 0 
+var D0
+var Location;
+var starthour
+var endhour
+var startminute
+var endminute
+var startsecond
+var endsecond
+var hour
+var minute
+var second
+var TotalHour
+var TotalMinute
+var TotalSecond;
+var FinishTime;
+var Started;
+var StartOfTime;
+var EndOfTime;
+var Finish;
+var Type;
+var TempStorage;
+var DirLoc;
+var sp = " ";
+var start = false;
+var logline;
+var pace = 1000
+var SvcCd
+var DayOfWeek
+var ActiveFlag
+var u
+var s
+
+function App_Open() 
+{
+  var i,s;
+	Check_Valid();
+	StartButton = false;
+	DoneButton = true;//false;
+}
+function App_Start()
+{
+	rv1.Clear();
+	if ((DEBUG)||(Demo))
+	{
+		BU_FILE = "\\Storage Card\\Route\\Route_list_Demo.txt";
+		DB_FILE = "\\Storage Card\\BU\\Route_list_Demo.txt";
+		DoneButton = true;
+	}
+	else
+	{
+		BU_FILE = "\\Storage Card\\Route\\Route_list.txt";
+		DB_FILE = "\\Storage Card\\BU\\Route_list.txt";
+		DoneButton = false;
+	}
+	Initialize_Variables();
+	Initialize_Date();
+	Initialize_TextBoxes();
+	Initialize_Combo_Boxes();
+	Initialize_Menus();
+	Initialize_RV1();
+	Initialize_RVLog();
+	Initialize_Button_Captions();
+	Init_Labs();
+	Initialize_Special();
+	Initialize_Street();
+	Progress1.SetStep(1);
+	Progress1.Visible = false;
+	Progress2.Visible = false;//true;
+	j = 500;
+	if (FileExists(DB_FILE)) rv1.Load(DB_FILE);
+	if (FileExists(DB_MILE_FILE)) RVLog.Load(DB_MILE_FILE);
+	if (rv1.NumItems >0) g_rs = 0;
+	else g_rs = -1;
+	Fill_Zeros(6);
+	Fill_Zeros(8);
+	if (!Demo){MaxRecords = rv1.NumItems;}
+	if (Demo){MaxRecords = 20;}
+	for(i=0;i<MaxRecords;i++)
+	{
+		D0 = rv1.ItemText(i,5);
+		if(rv1.ItemText(i,3)== "Vacation Pack"){VPac(i);}
+		if(rv1.ItemText(i,10)!=""){ServiceCode(i);}
+	}
+	rv1.ItemText(i,6)=parseInt(rv1.ItemText(i,6));
+	rv1.ItemText(i,7 + template)=parseInt(rv1.ItemText(i,7 + template));
+	Initialize_Stats();
+	rv1_ColumnClick(0)
+	rv1_ColumnClick(1)
+	Combo2_Single();
+	Combo6_Single();
+	SetTimer(1200,100,-1);
+	 {go("form13");}
+	if (VPFlag == 1){ALERT("Vacation Pack Delivery TODAY!");}
+	DrawCount()
+	Progress3.Visible = false;
+	Button6.Visible = false;
+}
+function App_Menu(id)
+{
+	switch(id) 
+	{
+		case IDM_EXIT:
+			rv1.Save(DB_FILE);
+			rv1.Save(BU_FILE);
+			RVLog.Save(DB_MILE_FILE);
+			RVLog.Save(BU_MILE_FILE);
+			Execute("\\Program Files\\Initializer\\Initializer.exe","");
+			App.Exit();
+			break;
+		case IDM_SAVE:
+			rv1.Save(DB_FILE);
+			rv1.Save(BU_FILE);
+			RVLog.Save(DB_MILE_FILE);
+			RVLog.Save(BU_MILE_FILE);
+			break;
+		case IDM_ACTIVE:
+			ActiveBtn_Click();
+			Progress2.visible = false;
+			break;
+		case IDM_HOUSES:
+			Combo13.Text = "None";//Combo12.Text;
+			//if (Combo13.Text==""){Combo13.Text = "None";}
+			Text13.Text=Text12.text;
+			Go("form1");
+			break;
+		case IDM_FAST:
+			pace = 750;
+			break;
+		case IDM_MED:
+			pace = 1000;
+			break;
+		case IDM_SLOW:
+			pace = 1250;
+			break;
+		case IDM_MAINT:
+			DrawCount();
+			Go("form2");
+			break;
+		case IDM_R2C22:
+			template = R2C22;
+			break;
+		case IDM_R2C18:
+			template = R2C18;
+			break;
+		case IDM_ABOUT:
+			go("form6");
+			break;
+		case IDM_Route_Help:
+			Execute("\\Windows\\iexplore.exe", HELP_FILE);
+			break;
+		case IDM_Register:
+			Go("Form7");
+			break;
+		case IDM_VOICE:
+			DelayType = 0
+			break;
+		case IDM_PAGE:
+			DelayType = 1
+			break;
+		case IDM_TIME:
+			DelayType = 2
+			break;
+		case IDM_RENUMBER:
+			Renumber()
+			break;
+		case IDM_DIRECTIONS:
+			TempStorage = rv1.ListIndex;//g_rs;
+			DirLoc = TempStorage;
+			Edit_Directions();
+			break;
+	}
+}
+function rv1_ColumnClick(n) 
+{
+	rv1.SortBy(n, 0); // Sort by Col n, ascending
+}
+function ActiveBtn_Click() 
+{
+	var i,a,s,as,j,D0,D1,Today;
+	var now1 = Date();
+	rv1.Save(DB_FILE);
+	rv1.Save(BU_FILE);
+	Disable_Menus();
+	Today = false;
+	D0 = "Apr 01"
+	D1 = now1;
+	D1 = D1.substr(4,6);
+	if(D0==D1)
+	{
+		Today = true;
+	}
+	rv1_ColumnClick(6 + template)
+	Initialize_Lists();
+	Label19.Clear();
+	j=rv1.NumItems;
+	Progress2.Visible = true;
+	Progress2.SetRange(0,j);
+	Progress2.SetStep(1);
+	for (i=Sindex;i<j;i++)
+	{
+		Progress2.StepIt();
+		a = rv1.ItemText(i,0);
+		s = rv1.ItemText(i,1);
+		if (s == "RACK"){a = Text41.Text;}
+		as = a + " " + s;
+		if((Today==true)&&(rv1.ItemText(i,3)=="#"))
+		{
+			rv1.ItemText(i,3) = "Active";
+		}
+		if(((rv1.ItemText(i,3)=="Active")||(rv1.ItemText(i,3)=="Sample")||(rv1.ItemText(i,3)=="Flyer"))||((Right(rv1.ItemText(i,3),4)=="Stop")&&(Left(rv1.ItemText(i,5),1)=="*"))||(Right(rv1.ItemText(i,3),4)=="Pack"))
+		{
+			List1.AddItem(as);
+			List2.AddItem(i);
+			//rv1.ItemText(i,8) = "*";
+		}
+		FinishTime = rv1.ItemText(i,7+template);
+	}
+	List1.ListIndex = 2;//Counter + 1; //change this 2 and the next one to a global variable to remember index when 
+	List2.ListIndex= 2;//Counter + 1;   //you leave the active page.
+	Label18.Caption = List1.GetItemString(2);//Counter + 1);
+	Label19.Caption = rv1.ItemText(List2.GetItemString(3),2);//Counter + 1),2);
+	if(DelayType != 2){Label20.Caption = List1.GetItemString(3);}//Counter + 2);
+	Progress1.SetRange(0,List1.NumItems);
+	Progress1.Visible = true;
+	Progress2.Visible = false;
+	List1.SetItemSelection(2,true);
+	Go("form3");	
+}
+function Combo2_Single()
+{
+	var i,j,a,s,s1;
+	j = Combo2.NumItems-2;
+	for(i=j;i>-1;i--)
+	{
+		Progress2.Visible = true;
+		Progress2.SetRange(0,j);
+		Progress2.SetStep(1);
+		Progress2.StepIt();
+		s=(Combo2.GetItemString(i+1));
+		s1=(Combo2.GetItemString(i));
+		if(s==s1)
+		{
+			Combo2.RemoveItem(i);
+		}
+	}
+	Progress2.Visible = false;
+}
+function Combo6_Single()
+{
+	var i,j,a,s,s1;
+	j = Combo6.NumItems-2;
+	for(i=j;i>-1;i--)
+	{
+		Progress2.Visible = true;
+		Progress2.SetRange(0,j);
+		Progress2.SetStep(1);
+		Progress2.StepIt();
+		s=(Combo6.GetItemString(i+1));
+		s1=(Combo6.GetItemString(i));
+		if(s1 == "") {Combo6.RemoveItem(i);}
+		else
+		{
+			if(s==s1)
+			{
+				Combo6.RemoveItem(i);
+			}
+		}
+	}
+	Progress2.Visible = false;
+}
+function Button1_Click() //Delivered button
+{
+	if (Started == false)
+	{
+		RunTime = 0;
+		StartTime();
+		Started = true;
+	}
+	if (DelayType == 2)
+	{
+		while((Counter < List1.NumItems-1)&&(DelayType == 2))
+		{
+			while (rv1.ItemText(g_rs,7 + template) > RunTime)
+			{
+				GetElapsedTime();
+				Label20.Caption = Right(rv1.ItemText(g_rs,7 + template),2) + "  " + Right(RunTime,2)
+			}
+			Advance();
+		}
+	}
+	if ((DelayType == 1)&&(LoopCount < 5))//Delay type 1 = page 
+	{
+		while(LoopCount < 5) 
+		{
+			Advance()
+			LoopCount++
+			Text16.Text = LoopCount
+		}
+		if(LoopCount >= 5)
+		{
+			LoopCount = 0;
+		}
+	}
+	if (DelayType == 0) //Delay type 0 = normal
+	{
+		if (Label19.Caption == "A")
+		{
+			Check1.checked = true;
+			Auto = true;
+		}
+		if (Label19.Caption == "M")
+		{
+			Check1.checked = false;
+			Auto = false;
+		}
+		if (Label19.Caption == "S")
+		{
+			Check2.checked = true;
+			SoundON = true;
+		}
+		if (Label19.Caption == "Q")
+		{
+			Check2.checked = false;
+			SoundON = false;
+		}
+	}
+	Advance()
+}
+function Advance()
+{
+	var i, j, s, p, k, ls, lm, number, address, g, street;
+	{
+		Text16.ForeColor = RGB(255, 255, 0);
+		Label21.Caption = (List1.NumItems-2)-Counter;
+		Label11.Caption = rv1.ItemText(g_rs,7 + template);
+		Color_Time();
+		if(!SoundON)
+		{	
+			Progress3.Visible = true;
+			Progress3.SetRange(0,pace);
+			Progress3.SetStep(1); 
+			for(var delaytimer = 0;delaytimer<pace;delaytimer++)
+			{
+				
+				Progress3.StepIt();
+			}
+			Progress3.Visible = false;
+		}
+		if(Counter < List1.NumItems-1)
+		{
+			if (Counter >= 0){Label24.Caption = List1.GetItemString(Counter-1);}
+			if (Counter > 1){Label25.Caption = List1.GetItemString(Counter-2);}
+			if (Counter > 2){Label26.Caption = List1.GetItemString(Counter-3);}
+			if (Counter < 2) 
+			{
+				Button6.Visible = false;
+				Label18.Caption = List1.GetItemString(Counter+2);
+				if(DelayType != 2){Label20.Caption = List1.GetItemString(Counter+3);}
+				// reads 1st address
+				g_rs = parseInt(List2.GetItemString(2));
+				address = rv1.ItemText(g_rs,0);
+				for(i=0;i<address.length;i++)
+				{
+					number = address.substr(i,1);
+					if ((DelayType == 0)||(DelayType == 2))
+					{	
+						Type = "number";
+						Sound(parseInt(number));
+					}
+				}
+				street = rv1.ItemText(g_rs,1);
+				if (street!= CurrentStreet)
+				{
+					if ((DelayType == 0)||(DelayType == 2))
+					{
+						Type = "street";
+						Sound(street);
+					}
+					CurrentStreet = street;
+					Pause = false;
+				}
+				//end of reads 1st address
+			}
+			else 
+			{
+				Button6.Visible = true;
+				PopulateLabels();
+			}
+			Go("form3");
+			Counter++; 
+			if ( Counter > 2 ){Button6.Visible = true;}
+			Count = (parseInt(m)*60)+(parseInt(c));
+			Progress1.StepIt();
+			k = List1.ListIndex;
+			if (List1.NumItems > 1)
+			{
+				if(Text16.Text=="0")
+				{
+				//Text16.Text = Counter-2;
+				}
+				if(Counter > parseInt(Text16.Text))
+				{
+					Text16.Text = Counter;
+				}
+			}
+			else
+			{
+				Count = parseInt(Text16.Text);
+			}
+			Counter = List1.Index;
+			if (List1.NumItems > 0)
+			{
+				for(i=0;i<List1.NumItems;i++)
+				{
+					if(k==i)
+					{
+						g_rs = parseInt(List2.GetItemString(i));
+						Sindex = g_rs + 1;
+					}
+				}
+			}
+			i=List1.ListIndex+1;
+			List1.ListIndex = i;
+			List2.ListIndex = i;
+			Counter = i-1;
+			if(i < List2.NumItems)
+			{
+				g_rs = parseInt(List2.GetItemString(i));
+				if((rv1.ItemText(g_rs,5)=="*")||(rv1.ItemText(g_rs,5)=="**")||(rv1.ItemText(g_rs,5)=="Deliver V Pack")||(rv1.ItemText(g_rs,3)=="Flyer")||(Right(rv1.ItemText(g_rs,3),4)=="Pack"))
+				{
+					
+					if(rv1.ItemText(g_rs,5)=="Deliver V Pack")
+					{
+						Label19.Caption = "Deliver V Pack";
+						rv1.ItemText(g_rs,5) = "**";
+					}
+					else 
+					if ((Right(rv1.ItemText(g_rs,3),4)=="Stop")||(Right(rv1.ItemText(g_rs,3),4)=="Pack"))
+					{
+						Label19.Caption = "Stop";
+						Type = "special";
+					}
+					else
+						if (rv1.ItemText(g_rs,3)=="Flyer")
+					{
+						Label19.Caption = "Flyer";
+							rv1.ItemText(g_rs,5) = "";
+							rv1.ItemText(g_rs,3)= "Active"
+						Type = "special";
+					}
+					else
+					{
+						Label19.Caption = "NEW START!!!"
+					}
+					if(rv1.ItemText(g_rs,5)=="*")
+					{
+						if ((DelayType == 0)||(DelayType == 2))
+						{
+							Type = "special";
+							//Sound(Label19.Caption);
+						}
+						rv1.ItemText(g_rs,5) = "";
+					}
+					if(rv1.ItemText(g_rs,5)=="**")
+					{
+						if ((DelayType == 0)||(DelayType == 2))
+						{
+							Type = "special";
+							//Sound(Label19.Caption);
+						}
+						rv1.ItemText(g_rs,5) = "*";
+					}
+					Go("form3");
+					SoundON = true;
+					Sound(Label19.Caption);
+				}
+				else
+				{
+					Label19.Caption = rv1.ItemText(g_rs,2);
+					Go("form3");
+					if (Counter > 2){Button6.Visible = true;}
+					if ((Label19.Caption != "")&&(Label19.Caption != "Pause"))//&&(Label19.Caption != "A")&&(Label19.Caption != "M"))
+					{
+						if ((DelayType == 0)||(DelayType == 2))
+						{
+							Type = "special";
+							SoundON = true;
+							Sound(Label19.Caption);
+						}
+					}
+				}
+				if (rv1.ItemText(g_rs,10)!= "")
+				{
+					SvcCd = rv1.ItemText(g_rs,10);
+					Type = "special";
+					SoundON = true;
+					Sound(SvcCd);
+				}
+				address = rv1.ItemText(g_rs,0);
+				for(i=0;i<address.length;i++)
+				{
+					number = address.substr(i,1);
+					if ((DelayType == 0)||(DelayType == 2))
+					{
+						if (number == "_")
+						{
+							Type = "number";
+							if(SoundON)
+								Sound('#');
+						}
+						else
+						{
+							if (number == "A")
+							{
+								Type = "number";
+								if(SoundON)
+									Sound('A');
+							}
+							else
+							{
+								Type = "number";
+								if(SoundON)
+									Sound(parseInt(number));
+							}
+						}
+					}
+				}
+				street = rv1.ItemText(g_rs,1);
+				if (street!=CurrentStreet)
+				{
+					if ((DelayType == 0)||(DelayType == 2))
+					{
+						Type = "street";
+						if(SoundON)
+							Sound(street);
+					}
+					CurrentStreet = street;
+					Pause = true;
+				}
+				else
+				{
+					Pause = false;
+				}
+				List1.ItemSelected(Counter+2) = true;
+				List1.ItemSelected(Counter)   = true;
+				List1.ItemSelected(Counter+1) = false;
+				List1.ItemSelected(Counter-1) = false;
+				List1.ItemSelected(Counter+2) = false;
+				if((Auto==true)&&(Label19.Caption == "")&&(!Pause)&&(DelayType != 1))
+				{
+					Type = "special";
+					if(SoundON)
+						Sound("Delay");
+					Button1_Click();
+				}
+				else
+				{
+					if (DelayType == 0)
+					{
+						Type = "special";
+						if(SoundON)
+							Sound("Pause");
+					}
+				}
+			}
+			SoundON = Check2.Checked;
+		}
+		if(i >= List2.NumItems)
+		{
+			Button1.Caption = "Saving";
+			var TimeNow = new Date();
+			Text21.Text = TimeNow.getVarDate();
+			delete TimeNow;
+			CalculateHours();
+//			rv1.Save(DB_FILE);
+//			rv1.Save(BU_FILE);
+			Text8.Append(DB_RECORD2);
+			Text8.Text = now + " " + RunTime;
+			Text8.WriteLine();
+			Text8.Close();
+			Text8.Append(BU_RECORD2);
+			Text8.Text = now + " " + RunTime;
+			Text8.WriteLine();
+			Text8.Close();
+			go("form13");
+		}
+	}
+	Text16.ForeColor = RGB(255, 0, 0);
+}
+function ChangeBtn_Click()
+{
+	var a, i, house, street,status, route, loc, notes;
+	a=2;
+	loc = "";
+	if(Combo6.Text != "INSTRUCTIONS?")
+	{
+		loc = Combo6.Text;
+	}
+	notes = Text4.Text;
+	if((Text1.Text != "Enter house #" )&&(Combo2.Text != "Select Street")&&(Combo3.Text != "Select Action")&&(Combo4.Text != "Route #")&&(Combo12.Text != "Service Code"))
+	{
+		a=0; 
+		Write_Log(Text1.Text, Combo2.Text);
+		Write_Log(Combo3.Text,Combo4.Text);
+		Write_Log(sp,sp);
+		for(i=0;i < rv1.NumItems;i++)
+		{
+			if((Text1.Text==rv1.ItemText(i,0))&&(Combo2.Text == rv1.ItemText(i,1)))
+			{
+				if (rv1.ItemText (i,3) == "Vacation Pack")
+				{
+					rv1.ItemText(i,5)= "Deliver V Pack";
+				}
+				else
+				{
+					rv1.ItemText(i,5)= "**";
+				}
+				rv1.ItemText(i,3)= Combo3.Text;
+				if(Combo6.Text != "INSTRUCTIONS?")
+				{
+					rv1.ItemText(i,2)= Combo6.Text;
+				}
+				if (Radio1.Checked == true)
+				{
+					rv1.ItemText(i,4) = "2C18";
+				}
+				else
+				{
+					rv1.ItemText(i,4) = "2C22";
+				}
+				rv1.ItemText(i,6 + template)= Text12.Text;
+				if(rv1.ItemText(i,6 + template)==""){rv1.ItemText(i,6 + template)="000";}
+				if(rv1.ItemText(i,6 + template).length<2){rv1.ItemText(i,6 + template)="0"+rv1.ItemText(i,6);}
+				if(rv1.ItemText(i,6 + template).length<3){rv1.ItemText(i,6 + template)="0"+rv1.ItemText(i,6);}
+				if(rv1.ItemText(i,6 + template).length<4){rv1.ItemText(i,6 + template)="0"+rv1.ItemText(i,6);}
+				if(rv1.ItemText(i,6 + template).length<5){rv1.ItemText(i,6 + template)="0"+rv1.ItemText(i,6);}
+				if(rv1.ItemText(i,6 + template).length<6){rv1.ItemText(i,6 + template)="0"+rv1.ItemText(i,6);}
+				Text12.Text = rv1.ItemText(i,6 + template);
+				Text13.Text = rv1.ItemText(i,6 + template);
+				if(Text4.Text==""){Text4.Text = rv1.ItemText(i+1,7);}
+				rv1.ItemText(i,7 + template) = Text4.Text;
+				a=1;
+				if((rv1.ItemText(i,3)=="Start")||(rv1.ItemText(i,3)=="Re-Start"))
+				{
+					rv1.ItemText(i,3)="Active";
+				}
+				if(rv1.ItemText(i,3)=="Vacation Pack")
+				{
+					counter = i;
+					go ("form5")
+				}
+				if(Combo12.Text == "None"){rv1.ItemText(i,10)="";}
+				else
+				{
+					rv1.ItemText(i,10)= Combo12.Text;
+				}
+			}
+		}
+	}
+	if (a==2)
+	{
+		Alert("Enter House #, Street, Route # and Status...");
+	}
+	else
+	{
+		if (a==0)
+		{
+			if(Text12.Text == ""){Text12.Text = "000";}
+			if(Text12.Text.length<2){Text12.Text="0"+Text12.Text;}
+			if(Text12.Text.length<3){Text12.Text="0"+Text12.Text;}
+			if(Text12.Text.length<4){Text12.Text="0"+Text12.Text;}
+			if(Text12.Text.length<5){Text12.Text="0"+Text12.Text;}
+			if(Text12.Text.length<6){Text12.Text="0"+Text12.Text;}
+			house = Text1.Text;
+			if(Combo6.Text != "INSTRUCTIONS?")
+			{
+				loc = Combo6.Text;
+			}
+			notes = Text4.Text;
+			street = Combo2.Text;
+			status = Combo3.Text;
+			route = Combo4.Text;
+			rv1.AddItem(house + "\t" + street + "\t" + loc + "\t" + status + "\t"+ route + "\t" + "**" + "\t" + Text12.Text + "\t" + "\t" + Text12.Text + "\t" + Combo13.Text);
+			if((rv1.ItemText(i,3)=="Start")||(rv1.ItemText(i,3)=="Re-Start"))
+			{
+				rv1.ItemText(i,3)="Active";
+			}
+//			rv1.Save(DB_FILE);
+//			rv1.Save(BU_FILE);
+		}
+		Text1.Text = "Enter house #"; 
+		Combo2.Text = "Select Street";
+		Combo3.Text = "Select Action";
+		Combo4.Text = "Route #";
+		Combo6.Text = "INSTRUCTIONS?";
+		Text12.Text = "";
+	}
+//	rv1.Save(DB_FILE);
+}
+function rv1_Click()
+{
+	var i
+	i = rv1.ListIndex;
+	Text1.Text = rv1.ItemText(i,0);
+	Combo2.Text = rv1.ItemText(i,1);
+	Combo3.Text = rv1.ItemText(i,3);
+	Combo4.Text = rv1.ItemText(i,4);
+	Combo6.Text = rv1.ItemText(i,2);
+	Combo13.Text = rv1.ItemText(i,10);
+	if(rv1.ItemText(i,10)==""){Combo13.Text = "None";}
+	Text4.Text = rv1.ItemText(i,7 + template);
+	Text12.Text = rv1.ItemText(i,6 + template);
+	Text13.Text = rv1.ItemText(i,6 + template);
+	Beep(3);
+	go("form1");
+}
+function List1_SelChange()
+{
+	var i;
+	Label19.Clear();
+	i=List1.ListIndex;
+	List2.ListIndex = i;
+	counter = i
+	g_rs = parseInt(List2.GetItemString(i));
+	Label19.Caption = rv1.ItemText(g_rs,2);
+	Beep(3);
+}
+function DrawCount()
+{
+	var i, j;
+	C18 = 0;
+	C22 = 0;
+	total = 0;
+	j=rv1.NumItems;
+	for(i=0;i<j;i++)
+	{
+		if((rv1.ItemText(i,3)=="Active")||(rv1.ItemText(i,3)=="Vacation Pack")||(rv1.ItemText(i,3)=="Flyer"))
+		{
+			if(rv1.ItemText(i,4)=="2C18")
+			{
+				C18++;
+			}
+			if(rv1.ItemText(i,4)=="2C22")
+			{
+				C22++;
+			}
+			total++;
+		}
+	}
+	C18 = C18 ;
+	C22 = C22;
+	total = parseInt(total) + parseInt(Text38.Text)+ parseInt(Text38.Text);
+	
+	Text9.Text = C18;
+	Text10.Text = C22;
+	total = total + parseInt(Text41.Text);
+	Text11.Text = total;
+	Text34.Text = "Count = " + total;
+}
+function Combo5_SelChange()
+{
+	var div, rem, index, temp, a, b
+	var i;
+	i = Combo5.ListIndex;
+	temp = ""
+	if (i >= 0)
+	{	
+		a = parseFloat(Combo5.GetItemString(i));
+		div = parseInt(total/a);
+		rem = parseInt(total-(div*a))
+		Text5.Text = div;
+		Text14.Text = rem; 
+	}
+}
+function Button2_Click() //Save button on Count Screen
+{  
+	Button2.Visible = false;
+	Text17.Text = parseInt(Text9.Text)+parseInt(Text17.Text);
+	Text18.Text = parseInt(Text10.Text)+parseInt(Text18.Text);
+	Text19.Text = parseInt(Text11.Text)+parseInt(Text19.Text);
+	Text17.Open(DB_RECORD1);
+	Text17.WriteLine();
+	Text17.Close();
+	Text18.Open(DB_RECORD5);
+	Text18.WriteLine();
+	Text18.Close();
+	Text19.Open(DB_RECORD6);
+	Text19.WriteLine();
+	Text19.Close();
+	Text17.Open(BU_RECORD1);
+	Text17.WriteLine();
+	Text17.Close();
+	Text18.Open(BU_RECORD5);
+	Text18.WriteLine();
+	Text18.Close();
+	Text19.Open(BU_RECORD6);
+	Text19.WriteLine();
+	Text19.Close();
+}
+function Button3_Click() //Clear Button on Count Screen
+{ 
+	Text14.Text = "0";
+	Text17.Text = "0";
+	Text18.Text = "0";
+	Text19.Text = "0";
+} 
+function App_Timer(id)
+{
+	if((n=1200))
+	{
+		c=c+1;
+		Label11.Caption = m+":"+ c;
+	}
+	if(c>60)
+	{
+		m=m+1;
+		c=0;
+	}
+}
+function Delay()
+{
+	var n;
+	for (n=0;n<50000;n++)
+	{
+	}
+}
+function Button4_Click()
+{
+	var bundles;
+	bundles = parseInt(Text5.Text);
+	if (bundles > 15){template = R2C22;}
+	ActiveBtn_Click();
+}
+function Button5_Click()
+{	
+	Go("form3");
+}
+function Button6_Click()//Backs up one step per click
+{
+	var i;
+	if (Counter > 2 ){
+		i=List1.ListIndex-1;
+		List1.ListIndex = i;
+		List2.ListIndex = i;
+		Counter = i-1;	
+		Text16.Text = Counter;		
+		PopulateLabels()
+		if (Counter >= 0){Label24.Caption = List1.GetItemString(Counter-1);}
+		else {Label24.Caption = "";}
+		if (Counter > 1){Label25.Caption = List1.GetItemString(Counter-2);}
+		else {Label25.Caption = "";}
+		if (Counter > 2){Label26.Caption = List1.GetItemString(Counter-3);}
+		else {Label26.Caption = "";}
+		Label19.Caption = "";
+		Go("form3");
+		Button6.Visible = true;
+	}
+	else
+	{
+		Button6.Visible = false;
+	}
+} 
+function StatsBtn_Click()
+{
+	Text41.Text = Text39.Text;
+	if (Text41.Text == ""){Text41.Text = "0";}
+	Label1.Visible = true;
+	Label2.Visible = true;
+	Label17.Visible = true;
+	Text38.Visible = true;
+	Text5.Visible = true;
+	Text14.Visible = true;
+	//Comment out the next six lines on release version
+	Label4.Visible = true;
+	Label5.Visible = true;
+	Text9.Visible = true;
+	Text10.Visible = true;
+	Text17.Visible = true;	Text18.Visible = true;
+	//Down to here
+	DrawCount();
+	Go("form2");
+}
+function Sound(sd)
+{
+	var f,g,n;
+	n = (sd);
+	if( Type == "number" )
+	{
+		g = DB_NUMBER_PATH + n + ".wav";
+	}
+	else
+	if( Type == "street" )
+	{
+		g = DB_STREET_PATH + n + ".wav";
+	}
+	else
+	if( Type == "special" )
+	{
+		g = DB_SPECIAL_PATH + n + ".wav";
+	}
+	else
+	if( Type == "direction" ) 
+	{
+		g = DB_DIRECT_PATH + n + ".wav";
+	}
+	f = 0;
+	PlaySnd(g, f);
+}
+function Button7_Click(count) // return from date select for vpac
+{ 
+	Update_Date(count);
+	go("form11")
+}
+function Update_Date(count)
+{
+	var D4 
+	D4 = "";
+	D3 = "";
+	Text23.Visible = false;
+	Label1.Visible = false;
+	Label2.Visible = false; 
+	Text5.Visible = false;
+	Text14.Visible = false;
+	D3 = Date1.Text
+	if (D3.substr(5,1)=="/")
+	{
+		D3 = D3.substr(0,5) + "/" + Right(D3,2)
+	}
+	else
+	{
+		D3 = D3.substr(0,4) + "/" + Right(D3,2)
+	}
+	if (Left(D3,3)== "Jan"){D3 = "01/" + Right(D3,5);}
+	if (Left(D3,3)== "Feb"){D3 = "02/" + Right(D3,5);}
+	if (Left(D3,3)== "Mar"){D3 = "03/" + Right(D3,5);}
+	if (Left(D3,3)== "Apr"){D3 = "04/" + Right(D3,5);}
+	if (Left(D3,2)== "May"){D3 = "05/" + Right(D3,5);}
+	if (Left(D3,3)== "Jun"){D3 = "06/" + Right(D3,5);}
+	if (Left(D3,3)== "Jul"){D3 = "07/" + Right(D3,5);}
+	if (Left(D3,3)== "Aug"){D3 = "08/" + Right(D3,5);}
+	if (Left(D3,3)== "Sep"){D3 = "09/" + Right(D3,5);}
+	if (Left(D3,3)== "Oct"){D3 = "10/" + Right(D3,5);}
+	if (Left(D3,3)== "Nov"){D3 = "11/" + Right(D3,5);}
+	if (Left(D3,3)== "Dec"){D3 = "12/" + Right(D3,5);}
+	if (D3.substr(5,1)=="/")
+	{
+		month = (D3.substr(0,2))
+		year = Right(D3,2)
+		day = (D3.substr(3,2))
+		D3 = month + "/" + day + "/" + year;
+		Text23.Text = D3
+		D4 = D3
+	}
+	if (D3.substr(3,1)=="/"){day   = (D3.substr(2,1));}
+	if ((D3.substr(1,1) == "/")&&(D3.substr(4,1)=="/")){day   = (D3.substr(2,2));} //5/30/07 example
+	if ((D3.substr(2,1) == "/")&&(D3.substr(4,1)=="/")){day   = (D3.substr(3,2));} //10/30/07 example
+	if (day.substr(0,1)=="/"){day  = ("0" + day.substr(1,1));}
+	if (day.substr(1,1)=="/"){day  = ("0" + day.substr(0,1));}
+	month = Left(D3,2)
+	if (month.substr(1,1)=="/"){month = ("0" + month.substr(0,1));}
+	year = Right(D3,2)
+	if (D4 == ""){D3 = month + "/" + day + "/" + year;}
+	else {D3 == D4;}
+	Text23.Text = D3
+	D1 = now 
+	Text22.Text = D1;
+	rv1.ItemText(counter,5) = D3;  
+	if (Text22.Text == Date1.Text)
+	{
+		Text23.Text = "True";
+	}
+}
+function Date1_Change(b, nDate) 
+{
+	Update_Date(count);
+}
+function VPac(i)
+{
+	var  D1
+	D1 = now;
+	if(D0 == D1)
+	{
+		rv1.ItemText(i,5)= "Deliver V Pack";
+		rv1.ItemText(i,3)= "Active";
+		VPFlag = 1;
+	}
+}
+function Left(str, n)
+{
+	if (n <= 0)
+		return "";
+	else if (n > String(str).length)
+		return str;
+	else
+		return String(str).substring(0,n);
+}
+function Right(str, n)
+{
+	if (n <= 0)
+		return "";
+	else if (n > String(str).length)
+		return str;
+	else 
+	{
+		var iLen = String(str).length;
+		return String(str).substring(iLen, iLen - n);
+	}
+}
+function About_Close_Click()
+{
+	go("form11");
+}
+
+function Renumber()
+{
+	var i,j;
+	Progress2.Visible = true;
+	Progress2.SetStep(1);
+	rv1_ColumnClick(6);
+	j=rv1.NumItems;
+	Progress2.SetRange(0,j);
+	for (i=0;i<j;i++)
+	{
+		Progress2.StepIt();
+		rv1.ItemText(i,6) = i+3;
+		if(rv1.ItemText(i,6)==""){rv1.ItemText(i,6)="000";}
+		if(rv1.ItemText(i,6).length<2){rv1.ItemText(i,6)="0"+rv1.ItemText(i,6);}
+		if(rv1.ItemText(i,6).length<3){rv1.ItemText(i,6)="0"+rv1.ItemText(i,6);}
+		if(rv1.ItemText(i,6).length<4){rv1.ItemText(i,6)="0"+rv1.ItemText(i,6);}
+		if(rv1.ItemText(i,6).length<5){rv1.ItemText(i,6)="0"+rv1.ItemText(i,6);}
+		if(rv1.ItemText(i,6).length<6){rv1.ItemText(i,6)="0"+rv1.ItemText(i,6);}
+	}
+	Progress2.Visible = false;
+}
+
+function Check1_Click() 
+{
+	if (Check1.Checked == true)
+	{
+		Check1.Checked = false;
+		Auto = false
+	}
+	else
+	{
+		Check1.Checked = true;
+		Auto = true;
+	}
+}
+
+function Check2_Click() 
+{
+	if (Check2.Checked == true)
+	{
+		Check2.Checked = false;
+		SoundON = false
+	}
+	else
+	{
+		Check2.Checked = true;
+		SoundON = true;
+	}
+}
+
+function GetSerialNumber() 
+{
+
+}
+
+
+function App_Timer(id) 
+{
+	if (id == 1200)
+	{
+		RunTime++;
+		if (RunTime > 999999){RunTime = 0;}
+	}
+}
+
+function Initialize_Combo_Boxes()
+{
+	var index,lineCount;
+	Combo2.ListIndex = 0;
+	Combo2.Text = "Select Street";
+	Combo3.AddItem("Vacation Stop");
+	Combo3.AddItem("Vacation Pack");
+	Combo3.AddItem("Stop");
+	Combo3.AddItem("Start");
+	Combo3.AddItem("Re-Start");
+	Combo3.AddItem("Sample");
+	Combo3.AddItem("Flyer");
+	Combo3.Text = "Select Action";
+	Combo4.Text = "Route #";
+	Combo4.AddItem("2C18");
+	Combo4.AddItem("2C22");
+	Combo5.AddItem("50");
+	Combo5.AddItem("40");
+	Combo5.AddItem("30");
+	Combo5.AddItem("25");
+	Combo5.AddItem("20");
+	Combo5.AddItem("10");
+	Combo5.AddItem("15");
+	Combo5.AddItem("35");
+	Combo5.AddItem("45");
+	Combo5.AddItem("55");
+	Combo5.AddItem("60");	
+	Combo6.ListIndex = 0;
+	Combo6.Text = "Instructions?";
+	Text27.Load("\\Storage Card\\BU\\Route\\Directions.txt");
+	lineCount = Text27.GetNumLines();
+	for (index = 0;index<lineCount;index++)
+	{
+		Combo7.AddItem(Text27.GetLine(index));
+	}
+	Text27.Text = "";
+	Combo8.ListIndex = 0;
+	Combo8.Text = "Select Street";
+	Combo9.ListIndex = 0;
+	Combo9.Text = "Select Street";
+	Combo11.AddItem("Vacation Stop");
+	Combo11.AddItem("Vacation Pack");
+	Combo11.AddItem("Stop");
+	Combo11.AddItem("Flyer");
+	Combo11.Text = "Select Stop Type";
+	Combo12.Text = "Service Code";
+	Combo12.AddItem("None");
+	Combo12.AddItem("D4");
+	Combo12.AddItem("WO");
+	Combo12.AddItem("SM");
+	Combo12.AddItem("WD");
+	Combo13.Text = "Service Code";
+	Combo13.AddItem("None");
+	Combo13.AddItem("D4");
+	Combo13.AddItem("WO");
+	Combo13.AddItem("WD");
+	Combo13.AddItem("SM");
+}
+
+function Initialize_Date()
+{
+	DayOfWeek = Left(now,3);
+	Text6.Text = DayOfWeek;
+	now = now.substr(4,6) + "/" + Right(now,2)
+	if (Left(now,3)== "Jan"){now = "01/" + Right(now,5);}
+	if (Left(now,3)== "Feb"){now = "02/" + Right(now,5);}
+	if (Left(now,3)== "Mar"){now = "03/" + Right(now,5);}
+	if (Left(now,3)== "Apr"){now = "04/" + Right(now,5);}
+	if (Left(now,3)== "May"){now = "05/" + Right(now,5);}
+	if (Left(now,3)== "Jun"){now = "06/" + Right(now,5);}
+	if (Left(now,3)== "Jul"){now = "07/" + Right(now,5);}
+	if (Left(now,3)== "Aug"){now = "08/" + Right(now,5);}
+	if (Left(now,3)== "Sep"){now = "09/" + Right(now,5);}
+	if (Left(now,3)== "Oct"){now = "10/" + Right(now,5);}
+	if (Left(now,3)== "Nov"){now = "11/" + Right(now,5);}
+	if (Left(now,3)== "Dec"){now = "12/" + Right(now,5);}
+}
+
+function Initialize_Menus()
+{
+	AddMenu("File", IDM_FILE);
+	AddSubMenu(1000, "Edit", IDM_EDIT);
+	AddMenuItem(1000, "Save", IDM_SAVE);
+	AddMenuItem(1000, "Exit", IDM_EXIT);
+	AddMenuItem(1000, "Renumber", IDM_RENUMBER);
+	AddSubMenu(IDM_EDIT,"Pace",IDM_PACE)
+	AddMenuItem(IDM_PACE,"Fast", IDM_FAST)
+	AddMenuItem(IDM_PACE,"Medium", IDM_MED)
+	AddMenuItem(IDM_PACE,"Slow", IDM_SLOW)
+	AddMenuItem(IDM_EDIT, "Active ", IDM_ACTIVE )
+	AddMenuItem(IDM_EDIT, "Houses ", IDM_HOUSES )
+	AddMenuItem(IDM_EDIT, "Directions", IDM_DIRECTIONS )
+	AddSubMenu(IDM_EDIT, "Delay ", IDM_DELAY )
+	AddMenuItem(IDM_DELAY, "Voice", IDM_VOICE )
+	AddMenuItem(IDM_DELAY, "Page", IDM_PAGE )
+	AddMenuItem(IDM_DELAY, "Time", IDM_TIME )
+	AddMenuItem(1000, "Stats ", IDM_MAINT )
+	AddMenu("Template", IDM_TEMPLATE);
+	AddMenuItem(2000, "R2C22", IDM_R2C22);
+	AddMenuItem(2000, "R2C18", IDM_R2C18);
+	AddMenu("Help", IDM_HELP);
+	AddMenuItem(3000, "About route", IDM_ABOUT);
+	AddMenuItem(3000, "Help", IDM_Route_Help);
+	EnableMenuItem(1000,IDM_TIME,false);
+	if(!Register)
+	{
+		AddMenuItem(3000, "Register", IDM_Register);
+	}
+}
+
+function Initialize_RV1()
+{
+	rv1.InsertColumn(0,50,"Number");
+	rv1.InsertColumn(1,100,"Street");
+	rv1.InsertColumn(2,100,"Special");
+	rv1.InsertColumn(3,50,"Status");
+	rv1.InsertColumn(4,100,"Route");
+	rv1.InsertColumn(5,100,"Notes");
+	rv1.InsertColumn(6,75,"R2C22");
+	rv1.InsertColumn(7,75,"Time");
+	rv1.InsertColumn(8,100,"R2C18");
+	rv1.InsertColumn(9,75,"Time18");
+	rv1.InsertColumn(10,75,"SvcCode");
+	rv1.FullRowSelect = true;
+	rv1.MultiSelect = true;
+}
+
+function Initialize_TextBoxes()
+{
+	Text1.Text = "Enter House #";
+	Text5.Text = "";
+	Text5.Visible = false;
+	Label18.Caption = "";
+	Text7.Visible = false;
+	Text9.Visible = false;
+	Text10.Visible = false;
+	Text11.Visible = false;
+	Label19.Caption = "";
+	Text14.Text = "";
+	Text14.Visible = false;
+	Label20.Caption = "";
+	Text16.Text = "0";
+	Text17.Visible = false;
+	Text18.Visible = false;
+	Text20.Visible = false;
+	Text21.Visible = false;
+	Text22.Text = now;
+	Text22.Visible = false;
+	Text23.Text = "";
+	Text23.Visible = false;
+	Text24.Visible = false;
+	Text25.Visible = false;
+	Check1.checked = true;
+	Text3.Visible = false;
+	Text28.Text = "";
+	Text29.Text = "";
+	Text30.Text = "Number";
+	Text31.Text = "Street";
+	Text38.Text = "2";
+	Text38.Visible = false;
+	var u
+	u = FileExists(DB_RACK);
+	if(u == false)
+	{
+		Text40.Create(DB_RACK);
+		Text40.Text = "Date\t\tDraw\tReturn";
+		Text40.WriteLine();
+		Text40.Text = "\t\t";
+		Text40.Write();
+		Text40.Close();
+	}
+	Text41.Text = "0";
+}
+
+function Initialize_Stats()
+{
+	Text17.Open(DB_RECORD1)
+	s=Text17.ReadLine();
+	while (s != "")
+	{
+		s=Text17.ReadString();
+	}
+	Text18.Open(DB_RECORD5)
+	s=Text18.ReadLine();
+	while (s != "")
+	{
+		s=Text18.ReadString();
+	}
+	Text19.Open(DB_RECORD6)
+	s=Text19.ReadLine();
+	while (s != "")
+	{
+		s=Text19.ReadString();
+	}
+}
+
+function Initialize_Button_Captions()
+{
+	Button2.Caption = "Save";
+	Button3.Caption = "Clear";
+	Button4.Caption = "Active";
+	Button5.Caption = "Return";
+	Button6.Caption = "Step Back";
+	Button6.Visible = false;
+	Button9.Caption = "Return";
+	Button10.Caption = "Step Back";
+	Button11.Caption = "<-?->";
+	Button12.Caption = "Save/Next";
+	Button13.Caption = "Return";
+	Button14.Caption = "Yes";
+	Button15.Caption = "No";
+	Button16.Caption = "Start";
+	Button17.Caption = "Stop";
+	Button17.Visible = false;
+	Button16.Visible = false;
+	Button18.Caption = "Change";
+	Button19.Caption = "Reset";
+	Button20.Caption = "Finished";	
+	Button21.Caption = "Return";
+}
+
+function Init_Labs()
+{
+	Label13.Visible = false;
+	Label_Version.Text = VERISON;
+	Label_Copyright_Info.Text = COPYRIGHT;
+	Label_Email_Address.Text = EMAIL;
+	Label4.Visible = false;
+	Label5.Visible = false;
+	Label1.visible = true;
+	Label4.Caption = "2C18"
+	Label1.Caption = "Bundles"
+	Label2.Caption = "Loose"
+	Label3.Caption = "per Bundle"
+	Label1.Visible = false;
+	Label2.Visible = false;
+	Label10.Caption = "Totals";
+	Text33.Text = "Are there any changes Today?";
+	Text32.Text = "Select Start or Stop";
+	Radio1.Caption = "Route 2C18";
+	Radio2.Caption = "Route 2C22";
+	Radio1.Visible = false;
+	Radio2.Visible = false;
+	Radio1.Checked = true;
+	Radio2.Checked = false;
+	Label21.Caption = "";
+	Label16.Caption = "Enter Starting Mileage";
+	Label17.Caption = "Extras";
+	Label17.Visible = false;
+	Text36.Text = "";
+	List1.BackColor = RGB(0, 0,100);
+	List1.style.backgroundColor = RGB(0, 0,100);
+	Label18.BackColor = RGB(0, 0, 100);
+	Label18.ForeColor = RGB(106, 255, 0);
+	Label19.BackColor = RGB(0, 0, 100);
+	Label19.ForeColor = RGB(106, 255, 0);
+	Label20.BackColor = RGB(0, 0, 100);
+	Label20.ForeColor = RGB(255, 0, 0);
+	Label21.BackColor = RGB(0, 0, 100);
+	Label21.ForeColor = RGB(255, 0, 0);
+	Check1.BackColor = RGB(0, 0, 100);
+	Check1.ForeColor = RGB(255, 0, 0);
+	Check2.BackColor = RGB(0, 0, 100);
+	Check2.ForeColor = RGB(255, 0, 0);
+	Label22.BackColor = RGB(0, 0, 100);
+	Label22.ForeColor = RGB(255, 0, 0);
+	Label23.BackColor = RGB(0, 0, 100);
+	Label23.ForeColor = RGB(255, 0, 0);
+	Label24.BackColor = RGB(0, 0, 100);
+	Label24.ForeColor = RGB(255, 0, 0);
+	Label25.BackColor = RGB(0, 0, 100);
+	Label25.ForeColor = RGB(255, 0, 0);
+	Label26.BackColor = RGB(0, 0, 100);
+	Label26.ForeColor = RGB(255, 0, 0);
+	Text16.BackColor = RGB(0, 0, 100);
+	Text16.ForeColor = RGB(255, 0, 0);
+	Label11.BackColor = RGB(0, 0, 100);
+	Label11.ForeColor = RGB(0, 0, 100);
+	Label7.Caption = "Return";
+	Label27.Caption = "Draw";
+}
+
+function Initialize_Variables()
+{
+	Image1.Text = "";
+	Image1.Load("\\Storage Card\\BU\\RC.bmp");
+	go("form8")
+	d=0;
+	c=0;
+	m=0;
+	Total = 0;
+	Sindex = 0;
+	Count = 1;
+	Counter = 1;
+	C18 = 0;
+	C20 = 0;
+	C22 = 0;
+	Auto = true;
+	Started = false;
+}
+
+function StartTime()
+{
+	var TimeNow = new Date();
+	Time1.Time = TimeNow.getVarDate();
+	Text20.Text = TimeNow.getVarDate();
+	delete TimeNow;
+	ParseTime(Text20.Text);
+	StartOfTime = parseInt(second) + (parseInt(minute)*60) + (parseInt(hour)*3600);
+}
+function Fill_Zeros(column)
+{
+	if (Demo == false){MaxRecords = rv1.NumItems;}
+	for(i=0;i<MaxRecords;i++)
+	{
+		counter = i;
+		if(rv1.ItemText(i,column)==""){rv1.ItemText(i,column)="000";}
+		if(rv1.ItemText(i,column).length<2){rv1.ItemText(i,column)="0"+rv1.ItemText(i,column);}
+		if(rv1.ItemText(i,column).length<3){rv1.ItemText(i,column)="0"+rv1.ItemText(i,column);}
+		if(rv1.ItemText(i,column).length<4){rv1.ItemText(i,column)="0"+rv1.ItemText(i,column);}
+		if(rv1.ItemText(i,column).length<5){rv1.ItemText(i,column)="0"+rv1.ItemText(i,column);}
+		if(rv1.ItemText(i,column).length<6){rv1.ItemText(i,column)="0"+rv1.ItemText(i,column);}
+	}
+}
+function Disable_Menus()
+{
+	EnableMenuItem(3000,IDM_ABOUT,false);
+	EnableMenuItem(3000,IDM_Route_Help,false);
+	EnableMenuItem(3000,IDM_Register,false);
+	EnableMenuItem(2000,IDM_R2C22,false);
+	EnableMenuItem(2000,IDM_R2C18,false);
+	EnableMenuItem(1000,IDM_RENUMBER,false);
+	EnableMenuItem(1000,IDM_MAINT,false);
+	EnableMenuItem(1000,IDM_TIME,false);
+	EnableMenuItem(IDM_EDIT,IDM_ACTIVE,false);
+	EnableMenuItem(IDM_EDIT,IDM_HOUSES,false);
+	EnableMenuItem(IDM_EDIT,IDM_DIRECTIONS,false);
+}
+function Initialize_Lists()
+{
+	List1.Clear();
+	List2.Clear();
+	List1.AddItem(" ");
+	List2.AddItem(" ");
+	List1.AddItem(" ");
+	List2.AddItem(" ");
+}
+function ParseTime(Temp) 
+{
+	var iTime
+	iTime = 0;
+	while (iTime < Temp.length)
+	{
+		if(Temp.substr(iTime,1)==":")  //Begin time at first space after date
+		{
+			hour = Temp.substr(iTime-2,2);
+			iTime++;
+			minute = Temp.substr(iTime,2);
+			iTime = iTime + 3;
+			second = Temp.substr(iTime,2);
+		}
+		iTime++;
+	}
+
+}
+function CalculateHours()
+{
+	var endTime;
+	ParseTime(Text21.Text);
+	EndOfTime = parseInt(second) + (parseInt(minute)*60) + (parseInt(hour)* 3600);
+	if (StartOfTime > EndOfTime){EndOfTime = (12*3600) + parseInt(EndOfTime);}
+	TotalSecond = parseInt(EndOfTime) - parseInt(StartOfTime);
+	TotalHour = 0;
+	TotalMinute = 0;
+	while(TotalSecond >= 3600)
+	{
+		TotalHour++;
+		TotalSecond = TotalSecond - 3600;
+	}
+	while(TotalSecond >= 60)
+	{
+		TotalMinute++;
+		TotalSecond = TotalSecond - 60;
+	}
+	Text8.Text = "";
+	Text8.Text = TotalSecond;
+	if(Text8.Text.length < 2){Text8.Text = "0" + Text8.Text;}
+	Text8.Text = TotalMinute + ":" + Text8.Text; 
+	if(Text8.Text.length < 5){Text8.Text = "0" + Text8.Text;}
+	Text8.Text = TotalHour + ":" + Text8.Text; 
+	if(Text8.Text.length < 8){Text8.Text = "0" + Text8.Text;}
+}
+function FindFinish(t)
+{
+	var tempHour, tempMin, tempSec, tempTime, ButtonSec, ButtonHour, ButtonMin
+	var finishHour, finishMin, finishSec
+	var elapsHour, elapsMin, elapsSec
+	var lentime, i
+	curTime = parseInt(second) + (parseInt(minute)*60) + (parseInt(hour)*3600);
+	//elapseHour, min, sec are derived from variable passed into function
+	elapsHour = parseInt(Left(t,2))
+	elapsMin = parseInt(t.substr(3,2))
+	elapsSec = parseInt(Right(t,2))
+	elapsTime = parseInt(elapsSec) + (parseInt(elapsMin)*60) + (parseInt(elapsHour)*3600)
+	//tempHour, min and sec are to store previous route time to point
+	tempHour = parseInt(Left(Label11.Caption,2))
+	tempMin = parseInt(Label11.Caption.substr(3,2))
+	tempSec = parseInt(Right(Label11.Caption,2))
+	tempTime = parseInt(tempSec) + (parseInt(tempMin) * 60) + (parseInt(tempHour) * 3600);
+	elapsTime = parseInt(elapsTime) - parseInt(tempTime)
+	//if (temptime > elapsTime){faster;}  negative value
+	//if (elapsTime > tempTime) {slower;} positive value
+	//if (elapsTime == tempTime){exact;}  0 value
+	//need to find difference between elapsed hour, minute and second
+	//and previous hour min and second and then add or subtract
+	//from stored finish time then add to current time to find
+	//time of completion
+	lentime = FinishTime.length
+	i = 0;
+	finishHour = "";
+	finishMin = "";
+	while ((FinishTime.substr(i,1) != ":")&&(i<2))
+	{
+		finishHour = finishHour + FinishTime.substr(i,1);
+		i++;
+	}
+	i++;
+	while ((FinishTime.substr(i,1) != ":")&&(i<lentime-2))
+	{
+		finishMin = finishMin + FinishTime.substr(i,1);
+		i++;
+	}
+	finishSec = Right(FinishTime,2);
+	Finish = parseInt(finishSec) + (parseInt(finishMin) * 60) + (parseInt(finishHour) * 3600);
+	Finish = parseInt(Finish) + parseInt(StartOfTime);
+	ButtonSec = parseInt(Finish) + parseInt(elapsTime);
+	ButtonHour = 0;
+	ButtonMin = 0;
+	while (ButtonSec >= 3600)
+	{
+		ButtonHour++;
+		ButtonSec = ButtonSec - 3600;
+	}
+	if(ButtonHour > 12){ButtonHour = ButtonHour - 12;}
+	while (ButtonSec >= 60)
+	{
+		ButtonMin++;
+		ButtonSec = ButtonSec - 60;
+	}
+	Text8.Text = ButtonSec;
+	if (Text8.Text.length < 2) {ButtonSec = "0" + Text8.Text;}
+	Text8.Text = ButtonMin;
+	if (Text8.Text.length < 2) {ButtonMin = "0" + Text8.Text;}
+	Button1.Caption = ButtonHour + ":" +  ButtonMin + ":" + ButtonSec;
+}
+function GetElapsedTime()
+{
+	var TimeNow = new Date();
+	Text21.Text = TimeNow.getVarDate();
+	delete TimeNow;
+	CalculateHours();
+	RunTime = Text8.Text;
+}
+function Write_Debug(a, b, c, d)
+{
+	if(DEBUG)
+	{
+		var u
+		u= mkdir(DB_DEBUG);
+		Text8.Append(DB_DEBUG);
+		Text8.Text = a + "\t " + b + "\t " + c + "\t " + d ;
+		Text8.WriteLine();
+		Text8.Close();
+	}
+}
+function Color_Time()
+{
+	GetElapsedTime();
+	if (rv1.ItemText(g_rs,7 + template)< RunTime)
+	{
+		Label11.BackColor = RGB(255, 0, 0);
+	}
+	if (rv1.ItemText(g_rs,7 + template)> RunTime)
+	{
+		Label11.BackColor = RGB(255, 255, 0);
+	}
+	if (rv1.ItemText(g_rs,7 + template)== RunTime)
+	{
+		Label11.BackColor = RGB(255, 0, 0);
+	}
+	FindFinish(RunTime);
+	if (DelayType != 2) 
+	{
+		rv1.ItemText(g_rs,7 + template) = RunTime;
+	}
+}
+function Check_Valid()
+{
+	var i, j, v;
+	Location = 0;
+	Progress2.visible = false;
+	Text7.Visible = true;
+	Text7.Text = "";
+	v = "Registered";
+	if (v != "Registered")
+	{
+		Register = false;
+		Alert("Please register");
+		List4_RegInfo();
+		Go("Form7");
+		Crypt_Calc();
+	}
+	else
+	{
+		if (v == "Registered")
+		{
+			Register = true;
+			Demo = false;
+			go("form11");
+			App_Start();
+		}
+		else
+		{
+			Alert ("Route Commander will start in Demo mode");
+			Demo = true;
+			Register = false;
+			go("form11");
+			App_Start();
+		}
+	}
+}
+function Button8_Click()
+{
+	var i, j, k, l, v;
+	DeCrypt_Calc();
+	if(Text7.Text == REGISTRATION)
+	{
+		SaveSetting("RouteCommander", "Registered", "Last", "Registered");
+		Alert("Thankyou for registering, Please re-start Route Commander to activate all functions");
+		Execute("\\Program Files\\Initializer\\Initializer.exe","");
+		App.Exit();
+	}
+	else
+	{
+		Alert ("Route Commander will start in Demo mode");
+		Demo = true;
+	}
+	Text7.Text = "";
+	List4.Clear();
+	App_Start();
+	go("form11")
+}
+function Crypt_Calc()
+{
+	var regLen, i, keyLen, code, key, encode;
+	code = "";
+	encode = "970669295";
+	
+	var v;
+	key = GetSetting("RouteCommander", "Key", "Last");
+	if (key == "")
+	{
+		var TimeNow = new Date();
+		Time1.Time = TimeNow.getVarDate();
+		Text25.Text = TimeNow.getVarDate();
+		var temp, i;
+		temp = "";
+		for(i = 0; i <= Text25.Text.length; i++)
+		{
+			if ((Text25.Text.substr(i,1)> 0)&&(Text25.Text.substr(i,1)<= 9))
+			{
+				temp = temp + Text25.Text.substr(i,1);
+			}
+		}
+		Text25.Text = temp;
+		while (temp.length < 9)
+		{
+			temp = temp + Text25.Text;
+		}
+		Text25.Text = Left(temp, 9);
+		key = Text25.Text;
+		SaveSetting("RouteCommander", "Key", "Last", key);
+	}
+	keyLen = key.length;
+	regLen = encode.length;
+	while (key.length < regLen)
+	{
+		key = key + Text25.Text;
+	}
+	Text25.Text = key;
+	key = Text25.Text;
+	for(i = 0; i < 9; i++)//regLen
+	{
+		Text25.Text = parseInt(encode.substr(i,1)) + parseInt(key.substr(i,1));
+		code = code + Right(Text25.Text,1);
+	}
+	Text25.Text = Left(key,keyLen);
+	List4.AddItem("Code = " + keyLen + code);
+		
+	Text7.Text = "";
+	Text7.Text = keyLen + code;
+}
+function DeCrypt_Calc()
+{
+	if (Text7.Text != "")
+	{
+		var regLen, key, i, keyLen, decode, temp, first, tempstart;
+		decode = "";
+		keyLen = Left(Text7.Text,1);
+		key = "123456789";//Text7.Text.substr(1,9);
+		temp = Text7.Text.substr(1,9);
+		regLen = temp.length;
+		for(i = 0; i < regLen; i++)
+		{
+			first = parseInt(temp.substr(i,1))
+			if (first < parseInt(key.substr(i,1))){first = first + 10;}
+			Text25.Text = first - parseInt(key.substr(i,1));
+			decode = decode + Right(Text25.Text,1);
+		}
+		List4.AddItem("decode = " + decode);
+		Text7.Text = decode;
+		var v;
+		v = GetSetting("RouteCommander", "Key", "Last");
+		REGISTRATION = v;
+
+	}
+}
+function List4_RegInfo()
+{
+	List4.Clear();
+	List4.AddItem("For registration Key:")
+	List4.AddItem("Call (970)443-2654")
+	List4.AddItem("or e-mail: byronaustin007@gmail.com")
+	List4.AddItem("Give them the following Code:")
+}
+function Initialize_Special()
+{
+	var s, t;
+	t = DB_SPECIAL_PATH;
+	s = findfirst(t + "*.wav", 0)
+	while( s != "")
+	{
+		s = Left(s,s.length-4);
+		if((s != "NEW START!!!") && (s != "Deliver V Pack") && (s != "Pause"))
+		{
+			Combo6.AddItem(s);
+		}
+		s = findnext();
+	}
+}
+function Initialize_Street()
+{
+	var s, t;
+	t = DB_STREET_PATH;
+	s = findfirst(t + "*.wav", 0)
+	while( s != "")
+	{
+		s = Left(s,s.length-4);
+		Combo2.AddItem(s);
+		Combo8.AddItem(s);
+		Combo9.AddItem(s);
+		s = findnext();
+	}
+}
+function Button9_Click()
+{
+	go("form3")
+}
+
+function Button10_Click()
+{
+	Button11_Click();
+}
+
+function Button12_Click()
+{
+	rv1.ItemText(DirLoc,8) = Text29.Text;
+	Text27.Text = "";
+	DirLoc++;
+	Edit_Directions();
+}
+
+function Button13_Click()
+{
+	rv1.ListIndex = TempStorage;
+	rv1.Save(DB_FILE);
+	go("form11");
+}
+
+function Edit_Directions()
+{
+	Text28.Text = rv1.ItemText(DirLoc,0) + " " + rv1.ItemText(DirLoc,1)
+	if(rv1.ItemText(DirLoc,8)!= "")
+	{
+		Text29.Text = rv1.ItemText(DirLoc,8);
+	}
+	go("form10");
+}
+
+function Combo7_SelChange()
+{
+	var i, temp;
+	i = Combo7.ListIndex;
+	if ( i > -1 )
+	{
+		Combo7.Text = Combo7.GetItemString(i);
+		Text27.Text = Text27.Text + Right(Combo7.GetItemString(i),Combo7.GetItemString(i).length-2) + " " ;
+		Text29.Text = Text29.Text + Left(Combo7.GetItemString(i),1);
+	}
+
+}
+
+function Combo8_SelChange()
+{
+	var i, temp;
+	i = Combo8.ListIndex;
+	if ( i > -1 )
+	{
+		Text27.Text = Text27.Text + Combo8.GetItemString(i) + " " ;
+		Text29.Text = Text29.Text + "[" + Combo8.GetItemString(i) + "]" ;
+	}
+}
+
+function Combo9_SelChange()
+{
+	var i, j, temp;
+	i = Combo9.ListIndex;
+	Combo10.Clear();
+	Text30.Text = "";
+	if ( i > -1 )
+	{
+		Text31.Text = Combo9.GetItemString(i);
+	}
+	for (j = 0; j < rv1.numItems; j++)
+	{
+		if (rv1.ItemText(j,1) == Text31.Text)
+		{
+			if ((rv1.ItemText(j,3)!= "Active")&&(ActiveFlag == 1))
+				Combo10.AddItem(rv1.ItemText(j,0));
+			if ((rv1.ItemText(j,3)!= "Stop")&&(ActiveFlag == 0))
+				Combo10.AddItem(rv1.ItemText(j,0));
+		}
+	}
+	Text32.Text = "Select or type house number        Click Change or Reset button";
+	Button18.Visible = true;
+	Button19.Visible = true;
+	Combo10.Visible = true;
+	Text30.Visible = true;
+}
+
+
+function Combo10_SelChange()
+{
+	var i, j, temp;
+	i = Combo10.ListIndex;
+	if ( i > -1 )
+	{
+		Text30.Text = Combo10.GetItemString(i);
+	}
+	for (j = 0; j < rv1.numItems; j++)
+	{
+		if ((rv1.ItemText(j,1) == Text31.Text)&&(rv1.ItemText(j,0) == Text30.Text))
+		{
+			Text12.Text = rv1.ItemText(j,6 + template);
+			if (rv1.ItemText(j,4) == "2C18")
+			{
+				Radio1_Click();
+			}
+			if (rv1.ItemText(j,4) == "2C22")
+			{
+				Radio2_Click();
+			}
+			Combo12.Text = (rv1.ItemText(j,10));
+			if(Combo12.Text==""){Combo12.Text = "None";}
+		}
+	}
+	Text32.Text = "Click Change or Reset button";
+}
+
+function Write_Log(a, b)
+{
+	var u
+	u= mkdir(DB_RECORD2);
+	Text8.Append(DB_RECORD2);
+	Text8.Text = a + "\t " + b ;
+	Text8.WriteLine();
+	Text8.Close();
+}
+
+function Button14_Click()
+{
+	Button16.Visible = true;
+	Button17.Visible = true;
+	Button14.Visible = false;
+	Button15.Visible = false;
+}
+
+function Button15_Click()
+{
+	StatsBtn_Click();
+}
+
+function Button16_Click()
+{
+	Radio1.Visible = true;
+	Radio2.Visible = true;
+	Text32.Text = "Select Street";
+	Combo9.Visible = false;
+	Button18.Visible = false;
+	Combo3.Text = "Start"
+	Combo12.Text = "None"
+	ActiveFlag = 1;
+	go("form12");
+}
+
+function Button17_Click()
+{
+	Text33.Text = "Select Stop Type";
+	Button16.Visible = false;
+	Button17.Visible = false;
+	Text32.Text = "Select Street";
+	Combo9.Visible = false;
+	Button18.Visible = false;
+	Combo11.Visible = true;
+	Combo12.Text = "None"
+	ActiveFlag = 0;
+}
+
+function Combo11_SelChange()
+{
+	var i;
+	i = Combo11.ListIndex;
+	Combo11.Text = Combo11.GetItemString(i);
+	Combo11.Visible = false;
+	Combo3.Text = Combo11.Text;
+	go("form12");
+}
+function Combo12_SelChange()
+{
+	var i;
+	i = Combo12.ListIndex;
+	Combo12.Text = Combo12.GetItemString(i);
+	Combo13.Text = Combo12.Text;
+}
+function Combo13_SelChange()
+{
+	var i;
+	i = Combo13.ListIndex;
+	Combo13.Text = Combo13.GetItemString(i);
+	Combo12.Text = Combo13.Text;
+	go("form1");
+}
+function Button18_Click()
+{
+	var j;
+	Text1.Text = Text30.Text;
+	Text4.Text = "";
+	Combo2.Text = Combo9.Text;
+	Combo4.Text = "2C18"
+	for (j = 0; j < rv1.numItems; j++)
+	{
+		if ((rv1.ItemText(j,1) == Text31.Text)&&(rv1.ItemText(j,0) == Text30.Text))
+		{
+			Text12.Text = rv1.ItemText(j,6 + template);
+		}
+	}
+	ChangeBtn_Click();
+	DrawCount();
+	Combo10.Clear();
+	Text30.Text = "Number";
+	Text31.Text = "Street";
+	Combo9.Text = "";
+	Combo10.Text = "";
+	Button18.Visible = false;
+	Button19.Visible = false;
+	Text33.Text = "More changes?"
+	Combo10.Visible = false;
+	Text30.Visible = false;
+}
+
+function Button19_Click()
+{
+	Text30.Text = "Number";
+	Text31.Text = "Street";
+	Combo10.Clear();
+	Button18.Visible = false;
+	Button19.Visible = false;
+	Combo10.Visible = false;
+	Text30.Visible = false;
+}
+
+function Text30_Click(){Text32.Text = "Click Change or Reset button";}
+function Button20_Click(){Button15_Click();}
+function Radio1_Click()
+{
+	Radio1.Checked = true;
+	Radio2.Checked = false;
+}
+
+function Radio2_Click() 
+{
+	Radio1.Checked = false;
+	Radio2.Checked = true;
+}
+
+function Initialize_RVLog()
+{
+	RVLog.InsertColumn(0,75,"Date");
+	RVLog.InsertColumn(1,85,"Start Mileage");
+	RVLog.InsertColumn(2,80,"End Mileage");
+	RVLog.InsertColumn(3,65,"Daily Miles");
+	RVLog.InsertColumn(4,100,"Start Time");
+	RVLog.InsertColumn(5,100,"Finish Time");
+	RVLog.InsertColumn(6,100,"Total Time");
+	RVLog.FullRowSelect = true;
+	RVLog.MultiSelect = true;
+	Button23.Caption = "1";
+	Button24.Caption = "2";
+	Button25.Caption = "3";
+	Button26.Caption = "4";
+	Button27.Caption = "5";
+	Button28.Caption = "6";
+	Button29.Caption = "7";
+	Button30.Caption = "8";
+	Button31.Caption = "9";
+	Button32.Caption = "<-";
+	Button33.Caption = "0";
+	Button34.Caption = "+";
+}
+function Button21_Click(){go("form11");}
+function Button22_Click(){go("form11");}
+//Mileage keypad functions
+function Button23_Click(){Text36.Text = Text36.Text + Button23.Caption;}
+function Button24_Click(){Text36.Text = Text36.Text + Button24.Caption;}
+function Button25_Click(){Text36.Text = Text36.Text + Button25.Caption;}
+function Button26_Click(){Text36.Text = Text36.Text + Button26.Caption;}
+function Button27_Click(){Text36.Text = Text36.Text + Button27.Caption;}
+function Button28_Click(){Text36.Text = Text36.Text + Button28.Caption;}
+function Button29_Click(){Text36.Text = Text36.Text + Button29.Caption;}
+function Button30_Click(){Text36.Text = Text36.Text + Button30.Caption;}
+function Button31_Click(){Text36.Text = Text36.Text + Button31.Caption;}
+function Button33_Click(){Text36.Text = Text36.Text + Button33.Caption;}
+function Button32_Click(){Text36.Text = Left(Text36.Text,Text36.Text.length-1);}
+
+//Rack keypad functions
+function Button35_Click(){Text15.Text = Text15.Text + Button35.Caption;}
+function Button36_Click(){Text15.Text = Text15.Text + Button36.Caption;}
+function Button37_Click(){Text15.Text = Text15.Text + Button37.Caption;}
+function Button38_Click(){Text15.Text = Text15.Text + Button38.Caption;}
+function Button39_Click(){Text15.Text = Text15.Text + Button39.Caption;}
+function Button40_Click(){Text15.Text = Text15.Text + Button40.Caption;}
+function Button41_Click(){Text15.Text = Text15.Text + Button41.Caption;}
+function Button42_Click(){Text15.Text = Text15.Text + Button42.Caption;}
+function Button43_Click(){Text15.Text = Text15.Text + Button43.Caption;}
+function Button45_Click(){Text15.Text = Text15.Text + Button45.Caption;}
+function Button44_Click(){Text15.Text = Left(Text15.Text,Text15.Text.length-1);}
+function Button22_Click()
+{
+	Text35.Text = Text15.Text;
+	Text15.Text = "";
+	Text40.Append(DB_RACK);
+	Text40.Text = "\t " + Text35.Text;
+	Text40.WriteLine();
+	Text40.Close();
+}
+
+function Button47_Click()
+{
+	Text39.Text = Text15.Text;
+	Text15.Text = "";
+	Text40.Append(DB_RACK);
+	Text40.Text = now + "\t " + Text39.Text ;
+	Text40.Write();
+	Text40.Close();
+}
+
+function Button46_Click(){go("form11");}
+
+function PopulateLabels()
+{
+	Label18.Caption = List1.GetItemString(Counter+2);
+	Label22.Caption = List1.GetItemString(Counter+1);
+	Label23.Caption = List1.GetItemString(Counter);
+	if (Counter < List1.NumItems-3)
+	{
+		if(DelayType != 2){Label20.Caption = List1.GetItemString(Counter+3);}
+	}
+}
+function Button34_Click()
+{
+	if(!start)
+	{
+		now = Date();
+		Initialize_Date();
+		RVLog.AddItem(now);
+		logline = RVLog.NumItems-1;
+		var TimeNow = new Date();
+		Time1.SetFormat("h");
+		shour = Time1.Text;
+		Time1.SetFormat("m");
+		smin = Time1.Text;
+		Time1.SetFormat("hh mm tt");
+		Time1.Time = TimeNow.getVarDate();
+		RVLog.ItemText(logline,4) = Time1.Text;
+		delete TimeNow;
+		RVLog.ItemText(logline,1) = Text36.Text;
+		Label16.Caption = "Enter Ending Mileage";
+		Text36.Text = "";
+	}
+	else
+	{
+		now = Date();
+		Initialize_Date();
+		RVLog.ItemText(logline,2) = Text36.Text;
+		Text36.Text = "Saving";
+		RVLog.ItemText(logline,3) = parseInt(RVLog.ItemText(logline,2))- parseInt(RVLog.ItemText(logline,1));
+		var TimeNow = new Date();
+		Time1.SetFormat("h");
+		hour = Time1.Text;
+		hour = parseInt(hour)-parseInt(shour);
+		Time1.SetFormat("m");
+		min = Time1.Text;
+		min = parseInt(min)-parseInt(smin);
+		Time1.SetFormat("hh mm tt");
+		Time1.Time = TimeNow.getVarDate();
+		RVLog.ItemText(logline,5) = Time1.Text;
+		delete TimeNow;
+		RVLog.ItemText(logline,6) = hour + ":" + min;
+	}
+	if(!start)
+	{
+		start = true;
+		go("form14");
+	}
+	else
+	{
+		RVLog.Save(DB_MILE_FILE);
+		RVLog.Save(BU_MILE_FILE);
+		DailyBackup();
+		Execute("\\Program Files\\Initializer\\Initializer.exe","");
+		App.Exit();
+	}
+}
+function ServiceCode(i)
+{
+	var sCode = rv1.ItemText(i,10); 
+	rv1.ItemText(i,3)= "Stop";
+	switch(sCode)
+	{
+		case "D4":
+			if(DayOfWeek == 'Thu'){rv1.ItemText(i,3)= "Active";}
+			if(DayOfWeek == 'Fri'){rv1.ItemText(i,3)= "Active";}
+			if(DayOfWeek == 'Sat'){rv1.ItemText(i,3)= "Active";}
+			if(DayOfWeek == 'Sun'){rv1.ItemText(i,3)= "Active";}
+		break;
+		case "WO":
+			if(DayOfWeek == 'Fri'){rv1.ItemText(i,3)= "Active";}
+			if(DayOfWeek == 'Sat'){rv1.ItemText(i,3)= "Active";}
+			if(DayOfWeek == 'Sun'){rv1.ItemText(i,3)= "Active";}
+		//	if(DayOfWeek == 'Mon'){rv1.ItemText(i,3)= "Active";}
+		break;
+		case "SM":
+			if(DayOfWeek == 'Sat'){rv1.ItemText(i,3)= "Active";}
+			if(DayOfWeek == 'Sun'){rv1.ItemText(i,3)= "Active";}		
+			if(DayOfWeek == 'Mon'){rv1.ItemText(i,3)= "Active";}
+		break;	
+		case "WD":
+			if(DayOfWeek == 'Mon'){rv1.ItemText(i,3)= "Active";}
+			if(DayOfWeek == 'Tue'){rv1.ItemText(i,3)= "Active";}
+			if(DayOfWeek == 'Wed'){rv1.ItemText(i,3)= "Active";}
+			if(DayOfWeek == 'Thu'){rv1.ItemText(i,3)= "Active";}
+			if(DayOfWeek == 'Fri'){rv1.ItemText(i,3)= "Active";}
+			if(DayOfWeek == 'Sat'){rv1.ItemText(i,3)= "Vacation Pack";}
+			if(DayOfWeek == 'Sun'){rv1.ItemText(i,3)= "Vacation Pack";}
+		break;		
+	}
+}
+function ReturnBtn_Click()
+{
+	DrawCount();
+	go("form11")
+}
+function DailyBackup()
+{ 
+ now = Date();
+ rv1.Save(DB_FILE);
+ rv1.Save(BU_FILE);
+ mkdir("\\Storage Card\\Route\\DailyBackup");
+ now = now.substr(4,6) + "." + Right(now,2) + "_"
+ if (Left(now,3)== "Jan"){now = "01." + Right(now,6);}
+ if (Left(now,3)== "Feb"){now = "02." + Right(now,6);}
+ if (Left(now,3)== "Mar"){now = "03." + Right(now,6);}
+ if (Left(now,3)== "Apr"){now = "04." + Right(now,6);}
+ if (Left(now,3)== "May"){now = "05." + Right(now,6);}
+ if (Left(now,3)== "Jun"){now = "06." + Right(now,6);}
+ if (Left(now,3)== "Jul"){now = "07." + Right(now,6);}
+ if (Left(now,3)== "Aug"){now = "08." + Right(now,6);}
+ if (Left(now,3)== "Sep"){now = "09." + Right(now,6);}
+ if (Left(now,3)== "Oct"){now = "10." + Right(now,6);}
+ if (Left(now,3)== "Nov"){now = "11." + Right(now,6);}
+ if (Left(now,3)== "Dec"){now = "12." + Right(now,6);}
+ 
+ w = "Route_Miles.txt";
+ s = DB_MILE_FILE;
+ Backup();
+ w = "Route_TOTAL.txt";
+ s = DB_RECORD6;
+ Backup();
+ w = "Route_LOG.txt";
+ s = DB_RECORD2;
+ Backup();
+ w = "Debug.txt";
+ s = DB_DEBUG;
+ Backup();
+ w = "Rack.txt";
+ s = DB_RACK;
+ Backup();
+ w = "Route_list.txt"
+ s = DB_FILE;
+ Backup();
+ }
+ 
+ function Backup()
+ {
+     u = "\\Storage Card\\Route\\DailyBackup\\" + now + w + ".BKU";
+     CopyFile(s, u);
+}
+
+function CancelBtn_Click()
+{
+	Button16.visible = false;
+	Button17.visible = false;
+	Button14.Visible = true;
+	Button15.Visible = true;
+	Text33.Text = "Cancelled - Any Changes?"
+	go("form11");
+}
