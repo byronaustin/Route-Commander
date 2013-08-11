@@ -22,3 +22,5 @@ Application keeps track of vacation packs, reminds the operator when to deliver 
 Countdown feature keeps track of number of papers left to deliver. 
 
 A daily count of papers is maintained to resolve against carrier billing each month. 
+
+Backup files are maintained on non-volatile memory SD card and updated with each use of the application. 
